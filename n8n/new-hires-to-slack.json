@@ -1,0 +1,140 @@
+{
+  "name": "Alert Slack when target accounts hire new managers and executives (Apify, no LinkedIn login)",
+  "nodes": [
+    {
+      "parameters": {
+        "width": 480,
+        "height": 720,
+        "content": "## Alert Slack when target accounts hire new managers and executives\n\n### Who's it for\nSales and account teams who keep a list of target accounts and want to know, every week, who just joined them in a buying role, and where that person came from.\n\n### How it works\n1. A weekly schedule starts the run.\n2. A Code node holds your account list (website domains).\n3. The Apify node runs **New Hires Finder** (`b2bsearch/new-hires-finder`): people who started at those companies in the last month, read from a database of profile records with position dates. No LinkedIn login, no cookies.\n4. A Filter keeps managers, directors, VPs and C-level.\n5. Slack gets one message per hire: name, new title, start month, previous employer and title, profile link.\n\n### Setup steps\n- Add your Apify credential to the Apify node (API token from Apify Console → Settings → Integrations).\n- Edit the domains in **Account list**.\n- Pick the channel in **Post to Slack** and connect your Slack credential.\n- Optional: change `sinceMonths` in the Apify node body, or the seniority list in the Filter.\n\n### Requirements\n- Apify account (free plan works). The Actor is pay per result: $0.0032 per new hire delivered ($3.20 per 1,000); companies with nobody new, people who already left and positions older than the window are free rows.\n- Slack credential.\n\n### Disclosure\nThe Actor in this template is built by the author of the template."
+      },
+      "name": "Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-900, -200]
+    },
+    {
+      "parameters": {
+        "color": 7,
+        "width": 420,
+        "height": 300,
+        "content": "## 1. Trigger and account list\nRuns every Monday at 08:00. Put your target account domains in the Code node, one string each. Up to 50 domains per run."
+      },
+      "name": "Note: trigger",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-380, -200]
+    },
+    {
+      "parameters": {
+        "color": 7,
+        "width": 420,
+        "height": 300,
+        "content": "## 2. New hires from Apify\n`sinceMonths: 1` matches the weekly cadence with overlap; start dates reach the database once a profile shows the new position, so last week's hires can appear a few weeks later. Rows with `_status: found` are the paid ones."
+      },
+      "name": "Note: apify",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [80, -200]
+    },
+    {
+      "parameters": {
+        "color": 7,
+        "width": 420,
+        "height": 300,
+        "content": "## 3. Keep buying roles, post to Slack\nThe Filter keeps `seniority` in manager / director / vp / cxo. The Slack message carries the previous employer: a hire who came from one of your customers already knows your product."
+      },
+      "name": "Note: slack",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [540, -200]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            { "field": "weeks", "weeksInterval": 1, "triggerAtDay": [1], "triggerAtHour": 8 }
+          ]
+        }
+      },
+      "name": "Every Monday",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-340, 140]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Your target accounts, as website domains. Up to 50 per run.\nconst companyDomains = [\n  'stripe.com',\n  'klarna.com',\n  'n26.com',\n  'revolut.com',\n  'wise.com',\n];\nreturn [{ json: { companyDomains } }];"
+      },
+      "name": "Account list",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-120, 140]
+    },
+    {
+      "parameters": {
+        "actorId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "Zr5XpiCaKq2AvtpxZ",
+          "cachedResultUrl": "https://console.apify.com/actors/Zr5XpiCaKq2AvtpxZ/input",
+          "cachedResultName": "LinkedIn New Hires Finder ✅ Recent Joiners + Previous Employer (b2bsearch/new-hires-finder)"
+        },
+        "timeout": {},
+        "operation": "Run actor and get dataset",
+        "customBody": "={{ JSON.stringify({ companyDomains: $json.companyDomains, sinceMonths: 1, maxPerCompany: 50, maxResults: 500 }) }}",
+        "actorSource": "store"
+      },
+      "name": "New Hires Finder (Apify)",
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [120, 140]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose" },
+          "conditions": [
+            {
+              "id": "status-found",
+              "leftValue": "={{ $json._status }}",
+              "rightValue": "found",
+              "operator": { "type": "string", "operation": "equals" }
+            },
+            {
+              "id": "seniority-buying-role",
+              "leftValue": "={{ ['manager', 'director', 'vp', 'cxo'].includes($json.seniority) }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "true", "singleValue": true }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "Managers and above",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [360, 140]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": { "__rl": true, "mode": "name", "value": "#new-hires-signals" },
+        "text": "=New hire at *{{ $json.companyName }}*: {{ $json.fullName }}, {{ $json.jobTitle }} ({{ $json.seniority }}), started {{ $json.startedAt }}{{ $json.previousCompany ? ' — came from ' + $json.previousCompany + ' (' + ($json.previousTitle || '') + ')' : '' }}\n{{ $json.linkedinUrl }}",
+        "otherOptions": {}
+      },
+      "name": "Post to Slack",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [600, 140]
+    }
+  ],
+  "connections": {
+    "Every Monday": { "main": [[{ "node": "Account list", "type": "main", "index": 0 }]] },
+    "Account list": { "main": [[{ "node": "New Hires Finder (Apify)", "type": "main", "index": 0 }]] },
+    "New Hires Finder (Apify)": { "main": [[{ "node": "Managers and above", "type": "main", "index": 0 }]] },
+    "Managers and above": { "main": [[{ "node": "Post to Slack", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "pinData": {}
+}
