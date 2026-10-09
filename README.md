@@ -9,7 +9,7 @@ Ready-to-import automations and step-by-step guides that use the [`b2bsearch` Ac
 | Domains to decision makers | Founders, C-level, VPs and directors for a list of company domains | [company-domains-to-decision-makers-sheets.json](n8n/company-domains-to-decision-makers-sheets.json) | |
 | Best customers to lookalike accounts | Seed domains to similar companies to the people at each | [best-customers-to-lookalike-accounts-sheets.json](n8n/best-customers-to-lookalike-accounts-sheets.json) | |
 | Sign-up enrichment to HubSpot | Webhook with an email to person, title, company, HubSpot contact | [signup-email-enrichment-hubspot.json](n8n/signup-email-enrichment-hubspot.json) | |
-| Email format check | The work email convention of each domain before you guess addresses | [company-email-format-check-sheets.json](n8n/company-email-format-check-sheets.json) | |
+| Email format check | The work email convention of each domain before you guess addresses | [company-email-format-check-sheets.json](n8n/company-email-format-check-sheets.json) | [articles/company-email-format.md](articles/company-email-format.md) |
 | B2B lead list with emails | ICP filters to leads with an email, an Apollo alternative | [b2b-lead-list-with-emails-apollo-alternative-sheets.json](n8n/b2b-lead-list-with-emails-apollo-alternative-sheets.json) | |
 | Champion tracking | Who left your customers' companies and where they work now | [former-employees-champion-tracking-sheets.json](n8n/former-employees-champion-tracking-sheets.json) | |
 
