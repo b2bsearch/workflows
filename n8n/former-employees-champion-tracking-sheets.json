@@ -1,0 +1,332 @@
+{
+  "name": "Track who left your customers' companies and where they work now (champion tracking) with Apify and Google Sheets",
+  "nodes": [
+    {
+      "parameters": {
+        "width": 480,
+        "height": 760,
+        "content": "## Track who left your customers and where they work now\n\n### Who's it for\nCustomer success and sales teams: a champion who leaves is a churn risk at the old account and a warm lead at the new one. This workflow lists both, by company domain.\n\n### How it works\n1. Reads the `domain` column of your Google Sheet (customer websites).\n2. **Former Employees Finder** (`b2bsearch/former-employees-finder`) returns people who left those companies after a given year, with their current title, current company and its domain.\n3. Appends one row per person to a results sheet, so you can filter by seniority and reach out at the new employer.\n\n### Setup steps\n- Add your Apify credential to the Apify node.\n- Pick the input sheet (column `domain`) and the output sheet.\n- Optional: change `leftAfterYear`, add `titleKeywords` or `seniority` in the Apify node body.\n\n### Requirements\n- Apify account. $0.10 per page of up to 50 people; `previewOnly: true` counts for free first.\n- Google Sheets credential.\n- For the email at the new company, pass `linkedinUrl` to the LinkedIn Email Finder template.\n\n### Disclosure\nThe Apify Actor in this template is built by the author of the template. It is pay per result: a miss is a free row."
+      },
+      "name": "Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -900,
+        -220
+      ]
+    },
+    {
+      "parameters": {
+        "width": 420,
+        "height": 300,
+        "content": "## 1. Customer domains\nOne per row. Brand domains resolve to the owner.",
+        "color": 7
+      },
+      "name": "Note: read",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -380,
+        -220
+      ]
+    },
+    {
+      "parameters": {
+        "width": 420,
+        "height": 300,
+        "content": "## 2. Who left, and where to\n`currentCompanyDomain` is the new account; `formerCompany` is the one they left.",
+        "color": 7
+      },
+      "name": "Note: apify",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        80,
+        -220
+      ]
+    },
+    {
+      "parameters": {
+        "width": 420,
+        "height": 300,
+        "content": "## 3. Save the moves\nSort by `currentCompany` to spot several alumni landing at the same place.",
+        "color": 7
+      },
+      "name": "Note: write",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        540,
+        -220
+      ]
+    },
+    {
+      "parameters": {},
+      "name": "When clicking 'Execute workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -340,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "options": {}
+      },
+      "name": "Read customer domains",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -120,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "domain",
+              "renameField": true,
+              "outputFieldName": "companyDomains"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Collect domains",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        120,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "actorId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "dntcFC4J43uLk5cvk",
+          "cachedResultUrl": "https://console.apify.com/actors/dntcFC4J43uLk5cvk/input",
+          "cachedResultName": "Former Employees Finder ✅ New · Company Alumni by Domain (b2bsearch/former-employees-finder)"
+        },
+        "timeout": {},
+        "operation": "Run actor and get dataset",
+        "customBody": "={{ JSON.stringify({ companyDomains: $json.companyDomains, leftAfterYear: 2025, maxResults: 200 }) }}",
+        "actorSource": "store"
+      },
+      "name": "Former Employees Finder (Apify)",
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [
+        360,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "status-found",
+              "leftValue": "={{ $json._status }}",
+              "rightValue": "found",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "Keep found",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        600,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "fullName": "={{ $json.fullName }}",
+            "formerCompany": "={{ $json.formerCompany }}",
+            "currentTitle": "={{ $json.currentTitle }}",
+            "currentCompany": "={{ $json.currentCompany }}",
+            "currentCompanyDomain": "={{ $json.currentCompanyDomain }}",
+            "linkedinUrl": "={{ $json.linkedinUrl }}",
+            "hasWorkEmail": "={{ $json.hasWorkEmail }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "fullName",
+              "displayName": "fullName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "formerCompany",
+              "displayName": "formerCompany",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "currentTitle",
+              "displayName": "currentTitle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "currentCompany",
+              "displayName": "currentCompany",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "currentCompanyDomain",
+              "displayName": "currentCompanyDomain",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "linkedinUrl",
+              "displayName": "linkedinUrl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "hasWorkEmail",
+              "displayName": "hasWorkEmail",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Append moves",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        840,
+        140
+      ]
+    }
+  ],
+  "connections": {
+    "When clicking 'Execute workflow'": {
+      "main": [
+        [
+          {
+            "node": "Read customer domains",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read customer domains": {
+      "main": [
+        [
+          {
+            "node": "Collect domains",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect domains": {
+      "main": [
+        [
+          {
+            "node": "Former Employees Finder (Apify)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Former Employees Finder (Apify)": {
+      "main": [
+        [
+          {
+            "node": "Keep found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Keep found": {
+      "main": [
+        [
+          {
+            "node": "Append moves",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

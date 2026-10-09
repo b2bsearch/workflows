@@ -1,0 +1,300 @@
+{
+  "name": "Check the email format of companies (first.last@, flast@) before guessing work emails, from a domain list in Google Sheets with Apify",
+  "nodes": [
+    {
+      "parameters": {
+        "width": 480,
+        "height": 760,
+        "content": "## Check company email formats before you guess work emails\n\n### Who's it for\nAnyone who builds work email addresses from names: SDRs, recruiters, agencies. Guessing `first.last@` works at some companies and wastes verification credits at others. This workflow tells you which is which.\n\n### How it works\n1. Reads the `domain` column of your Google Sheet.\n2. **Company Email Format Finder** (`b2bsearch/company-email-format-finder`) reads the addresses on record for each company's current staff and reports the pattern most of them follow, how many people confirm it and the agreement. No address leaves the Actor; samples are masked.\n3. Appends one row per domain to a results sheet: pattern, example, confirmations, agreement, other patterns in use, status.\n\n### Setup steps\n- Add your Apify credential to the Apify node.\n- Pick the input sheet (column `domain`) and the output sheet.\n- Use `agreement` as your bar: build addresses where it is 0.8 or higher; use an email finder on record for the rest.\n\n### Requirements\n- Apify account. $0.02 per domain with a confirmed pattern; weak evidence, unknown domains and shared-hosting domains are free. 1,000 domains cost at most $20.\n- Google Sheets credential.\n\n### Disclosure\nThe Apify Actor in this template is built by the author of the template. It is pay per result: a miss is a free row."
+      },
+      "name": "Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -900,
+        -220
+      ]
+    },
+    {
+      "parameters": {
+        "width": 420,
+        "height": 300,
+        "content": "## 1. Domains\nUp to 5,000 per run; about 1–2 seconds per domain.",
+        "color": 7
+      },
+      "name": "Note: read",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -380,
+        -220
+      ]
+    },
+    {
+      "parameters": {
+        "width": 420,
+        "height": 300,
+        "content": "## 2. Pattern from real addresses\n`confirmations` = distinct employees whose address follows the pattern. 20 at 0.9 agreement is a convention; 3 at 0.5 is a hint.",
+        "color": 7
+      },
+      "name": "Note: apify",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        80,
+        -220
+      ]
+    },
+    {
+      "parameters": {
+        "width": 420,
+        "height": 300,
+        "content": "## 3. Save the verdict\n`otherPatterns` shows a company with two conventions. `_status` explains every free row.",
+        "color": 7
+      },
+      "name": "Note: write",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        540,
+        -220
+      ]
+    },
+    {
+      "parameters": {},
+      "name": "When clicking 'Execute workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -340,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "options": {}
+      },
+      "name": "Read domains",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -120,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "domain",
+              "renameField": true,
+              "outputFieldName": "domains"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Collect domains",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        120,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "actorId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "RseVONATt3sXimyQP",
+          "cachedResultUrl": "https://console.apify.com/actors/RseVONATt3sXimyQP/input",
+          "cachedResultName": "Company Email Format Finder ✅ New · Real Pattern, $0.02/domain (b2bsearch/company-email-format-finder)"
+        },
+        "timeout": {},
+        "operation": "Run actor and get dataset",
+        "customBody": "={{ JSON.stringify({ domains: $json.domains, sampleLimit: 200 }) }}",
+        "actorSource": "store"
+      },
+      "name": "Company Email Format Finder (Apify)",
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [
+        360,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "domain": "={{ $json.domain }}",
+            "pattern": "={{ $json.pattern }}",
+            "patternExample": "={{ $json.patternExample }}",
+            "confirmations": "={{ $json.confirmations }}",
+            "agreement": "={{ $json.agreement }}",
+            "coverage": "={{ $json.coverage }}",
+            "otherPatterns": "={{ $json.otherPatterns }}",
+            "_status": "={{ $json._status }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "domain",
+              "displayName": "domain",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "pattern",
+              "displayName": "pattern",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "patternExample",
+              "displayName": "patternExample",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "confirmations",
+              "displayName": "confirmations",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "agreement",
+              "displayName": "agreement",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "coverage",
+              "displayName": "coverage",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "otherPatterns",
+              "displayName": "otherPatterns",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "_status",
+              "displayName": "_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Append formats",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        600,
+        140
+      ]
+    }
+  ],
+  "connections": {
+    "When clicking 'Execute workflow'": {
+      "main": [
+        [
+          {
+            "node": "Read domains",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read domains": {
+      "main": [
+        [
+          {
+            "node": "Collect domains",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect domains": {
+      "main": [
+        [
+          {
+            "node": "Company Email Format Finder (Apify)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Company Email Format Finder (Apify)": {
+      "main": [
+        [
+          {
+            "node": "Append formats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

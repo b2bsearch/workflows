@@ -1,0 +1,346 @@
+{
+  "name": "Build a B2B lead list with emails from job title, country and company size filters (Apollo alternative) into Google Sheets with Apify",
+  "nodes": [
+    {
+      "parameters": {
+        "width": 480,
+        "height": 760,
+        "content": "## Build a B2B lead list with emails from ICP filters\n\n### Who's it for\nFounders and SDRs who want a prospect list by job title, seniority, country, industry and company size, with an email on every row, without an Apollo or Sales Navigator subscription.\n\n### How it works\n1. A Set node holds your filters (edit the values).\n2. **B2B Leads Finder** (`b2bsearch/b2b-leads-finder`) on Apify searches a database of 800M+ professional profiles and returns one row per person who has an email on record: name, title, company, location, LinkedIn URL, email and its type. People without an email are skipped and not charged.\n3. The rows are appended to your Google Sheet, ready for a sequence tool.\n\n### Setup steps\n- Add your Apify credential to the Apify node.\n- Edit `jobTitles`, `countries`, `industries`, `companySizeMin`, `companySizeMax`, `emailType` and `maxResults` in **ICP filters**.\n- Pick the output sheet. Run again with a different sheet to grow the list; use `excludeDatasets` in the Actor to skip people from earlier runs.\n\n### Requirements\n- Apify account. $1.50–$3 per 1,000 leads depending on your Apify plan; 500 leads cost at most $1.50.\n- Google Sheets credential.\n\n### Disclosure\nThe Apify Actor in this template is built by the author of the template. It is pay per result: a miss is a free row."
+      },
+      "name": "Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -900,
+        -220
+      ]
+    },
+    {
+      "parameters": {
+        "width": 420,
+        "height": 300,
+        "content": "## 1. Your ICP\nTitle words, two-letter country codes, industry names, employee range. `emailType` = work, personal or any.",
+        "color": 7
+      },
+      "name": "Note: filters",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -380,
+        -220
+      ]
+    },
+    {
+      "parameters": {
+        "width": 420,
+        "height": 300,
+        "content": "## 2. Leads with an email\nOne flat row per person. `maxResults` is your spend cap.",
+        "color": 7
+      },
+      "name": "Note: apify",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        80,
+        -220
+      ]
+    },
+    {
+      "parameters": {
+        "width": 420,
+        "height": 300,
+        "content": "## 3. To the sheet\nColumns match what outreach tools import: name, email, title, company, LinkedIn URL.",
+        "color": 7
+      },
+      "name": "Note: write",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        540,
+        -220
+      ]
+    },
+    {
+      "parameters": {},
+      "name": "When clicking 'Execute workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -340,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "jobTitles",
+              "name": "jobTitles",
+              "value": "={{ ['head of marketing', 'vp marketing', 'cmo'] }}",
+              "type": "array"
+            },
+            {
+              "id": "countries",
+              "name": "countries",
+              "value": "={{ ['gb'] }}",
+              "type": "array"
+            },
+            {
+              "id": "industries",
+              "name": "industries",
+              "value": "={{ ['Software Development'] }}",
+              "type": "array"
+            },
+            {
+              "id": "companySizeMin",
+              "name": "companySizeMin",
+              "value": 50,
+              "type": "number"
+            },
+            {
+              "id": "companySizeMax",
+              "name": "companySizeMax",
+              "value": 200,
+              "type": "number"
+            },
+            {
+              "id": "emailType",
+              "name": "emailType",
+              "value": "work",
+              "type": "string"
+            },
+            {
+              "id": "maxResults",
+              "name": "maxResults",
+              "value": 500,
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "ICP filters",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -120,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "actorId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gZivd9twvcH2kwNQ3",
+          "cachedResultUrl": "https://console.apify.com/actors/gZivd9twvcH2kwNQ3/input",
+          "cachedResultName": "B2B Leads Finder with Emails ✅ New · Apollo Alternative (b2bsearch/b2b-leads-finder)"
+        },
+        "timeout": {},
+        "operation": "Run actor and get dataset",
+        "customBody": "={{ JSON.stringify({ jobTitles: $json.jobTitles, countries: $json.countries, industries: $json.industries, companySizeMin: $json.companySizeMin, companySizeMax: $json.companySizeMax, emailType: $json.emailType, maxResults: $json.maxResults }) }}",
+        "actorSource": "store"
+      },
+      "name": "B2B Leads Finder (Apify)",
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [
+        120,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "status-found",
+              "leftValue": "={{ $json._status }}",
+              "rightValue": "found",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "Keep leads",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        360,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "fullName": "={{ $json.fullName }}",
+            "email": "={{ $json.email }}",
+            "emailType": "={{ $json.emailType }}",
+            "jobTitle": "={{ $json.jobTitle }}",
+            "companyName": "={{ $json.companyName }}",
+            "companyDomain": "={{ $json.companyDomain }}",
+            "location": "={{ $json.location }}",
+            "linkedinUrl": "={{ $json.linkedinUrl }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "fullName",
+              "displayName": "fullName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "emailType",
+              "displayName": "emailType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "jobTitle",
+              "displayName": "jobTitle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "companyName",
+              "displayName": "companyName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "companyDomain",
+              "displayName": "companyDomain",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "location",
+              "displayName": "location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "linkedinUrl",
+              "displayName": "linkedinUrl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Append leads",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        600,
+        140
+      ]
+    }
+  ],
+  "connections": {
+    "When clicking 'Execute workflow'": {
+      "main": [
+        [
+          {
+            "node": "ICP filters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ICP filters": {
+      "main": [
+        [
+          {
+            "node": "B2B Leads Finder (Apify)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "B2B Leads Finder (Apify)": {
+      "main": [
+        [
+          {
+            "node": "Keep leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Keep leads": {
+      "main": [
+        [
+          {
+            "node": "Append leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

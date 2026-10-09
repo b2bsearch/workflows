@@ -5,8 +5,15 @@ Ready-to-import automations and step-by-step guides that use the [`b2bsearch` Ac
 | Workflow | What it does | n8n | Guide |
 |---|---|---|---|
 | New hires signal | Every Monday, who joined your target accounts in a buying role and where they came from, to Slack | [new-hires-to-slack.json](n8n/new-hires-to-slack.json) | [articles/new-hires-signal.md](articles/new-hires-signal.md) |
+| LinkedIn URLs to work emails | A sheet of LinkedIn profile URLs to emails on record, one Actor run for the whole list | [linkedin-urls-to-work-emails-sheets.json](n8n/linkedin-urls-to-work-emails-sheets.json) | |
+| Domains to decision makers | Founders, C-level, VPs and directors for a list of company domains | [company-domains-to-decision-makers-sheets.json](n8n/company-domains-to-decision-makers-sheets.json) | |
+| Best customers to lookalike accounts | Seed domains to similar companies to the people at each | [best-customers-to-lookalike-accounts-sheets.json](n8n/best-customers-to-lookalike-accounts-sheets.json) | |
+| Sign-up enrichment to HubSpot | Webhook with an email to person, title, company, HubSpot contact | [signup-email-enrichment-hubspot.json](n8n/signup-email-enrichment-hubspot.json) | |
+| Email format check | The work email convention of each domain before you guess addresses | [company-email-format-check-sheets.json](n8n/company-email-format-check-sheets.json) | |
+| B2B lead list with emails | ICP filters to leads with an email, an Apollo alternative | [b2b-lead-list-with-emails-apollo-alternative-sheets.json](n8n/b2b-lead-list-with-emails-apollo-alternative-sheets.json) | |
+| Champion tracking | Who left your customers' companies and where they work now | [former-employees-champion-tracking-sheets.json](n8n/former-employees-champion-tracking-sheets.json) | |
 
-More are added weekly: email format before guessing, lookalike accounts to decision makers, a weekly signals digest, sign-ups to CRM. Each guide has a version for Claude Code (a prompt over the Apify MCP server) and a version for n8n.
+Each guide has a version for Claude Code (a prompt over the Apify MCP server) and a version for n8n.
 
 ## Import an n8n workflow
 

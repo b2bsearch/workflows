@@ -1,0 +1,342 @@
+{
+  "name": "Find decision makers (CEO, founders, VPs) for a list of company domains and save them to Google Sheets with Apify",
+  "nodes": [
+    {
+      "parameters": {
+        "width": 480,
+        "height": 760,
+        "content": "## Find decision makers for a list of company domains\n\n### Who's it for\nOutbound and ABM teams who have target accounts as website domains and need the people to contact: founders, C-level, VPs and directors, with LinkedIn URLs, without Sales Navigator.\n\n### How it works\n1. Reads the `domain` column of your Google Sheet (acme.com).\n2. Runs **Decision Maker Finder by Domain** (`b2bsearch/domain-to-decision-makers`) on Apify for the whole list: founders and CEOs first, then C-level, VPs and directors, up to a cap per company. Rows come from a database of professional profiles, no scraping.\n3. Appends one row per person to a results sheet: name, title, seniority, company, LinkedIn URL and whether a work email is on record.\n\n### Setup steps\n- Add your Apify credential to the Apify node.\n- Pick the input sheet (column `domain`) and the output sheet.\n- Optional: change `roles` (founder, cxo, vp, director) and `maxPerCompany` in the Apify node body, or add `titleKeywords` such as [\"marketing\", \"sales\"].\n\n### Requirements\n- Apify account. $3.20 per 1,000 people delivered; companies with nobody matching are free rows. 100 domains at 5 people each cost at most $1.60.\n- Google Sheets credential.\n- For email addresses, pass the `linkedinUrl` column to the LinkedIn Email Finder template.\n\n### Disclosure\nThe Apify Actor in this template is built by the author of the template. It is pay per result: a miss is a free row."
+      },
+      "name": "Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -900,
+        -220
+      ]
+    },
+    {
+      "parameters": {
+        "width": 420,
+        "height": 300,
+        "content": "## 1. Read the domains\nWebsite domains, one per row. Full URLs are reduced to the domain; brand domains resolve to the owning company.",
+        "color": 7
+      },
+      "name": "Note: read",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -380,
+        -220
+      ]
+    },
+    {
+      "parameters": {
+        "width": 420,
+        "height": 300,
+        "content": "## 2. Decision makers per domain\n`roles` picks the seniority levels; `maxPerCompany` caps the spend. Rows are ordered founder and CEO first.",
+        "color": 7
+      },
+      "name": "Note: apify",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        80,
+        -220
+      ]
+    },
+    {
+      "parameters": {
+        "width": 420,
+        "height": 300,
+        "content": "## 3. Save the people\n`hasWorkEmail` tells you who is reachable before you pay for an address.",
+        "color": 7
+      },
+      "name": "Note: write",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        540,
+        -220
+      ]
+    },
+    {
+      "parameters": {},
+      "name": "When clicking 'Execute workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -340,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "options": {}
+      },
+      "name": "Read domains",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -120,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "domain",
+              "renameField": true,
+              "outputFieldName": "domains"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Collect domains",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        120,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "actorId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "Wiwa5fOD7HOfKdilA",
+          "cachedResultUrl": "https://console.apify.com/actors/Wiwa5fOD7HOfKdilA/input",
+          "cachedResultName": "Decision Maker Finder by Domain ✅ New · CEOs, Founders & VPs (b2bsearch/domain-to-decision-makers)"
+        },
+        "timeout": {},
+        "operation": "Run actor and get dataset",
+        "customBody": "={{ JSON.stringify({ domains: $json.domains, roles: ['founder', 'cxo', 'vp', 'director'], maxPerCompany: 5 }) }}",
+        "actorSource": "store"
+      },
+      "name": "Decision Maker Finder (Apify)",
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [
+        360,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "status-found",
+              "leftValue": "={{ $json._status }}",
+              "rightValue": "found",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "Keep found",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        600,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "fullName": "={{ $json.fullName }}",
+            "jobTitle": "={{ $json.jobTitle }}",
+            "seniority": "={{ $json.seniority }}",
+            "companyName": "={{ $json.companyName }}",
+            "companyDomain": "={{ $json.companyDomain }}",
+            "linkedinUrl": "={{ $json.linkedinUrl }}",
+            "hasWorkEmail": "={{ $json.hasWorkEmail }}",
+            "_status": "={{ $json._status }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "fullName",
+              "displayName": "fullName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "jobTitle",
+              "displayName": "jobTitle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "seniority",
+              "displayName": "seniority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "companyName",
+              "displayName": "companyName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "companyDomain",
+              "displayName": "companyDomain",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "linkedinUrl",
+              "displayName": "linkedinUrl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "hasWorkEmail",
+              "displayName": "hasWorkEmail",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "_status",
+              "displayName": "_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Append decision makers",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        840,
+        140
+      ]
+    }
+  ],
+  "connections": {
+    "When clicking 'Execute workflow'": {
+      "main": [
+        [
+          {
+            "node": "Read domains",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read domains": {
+      "main": [
+        [
+          {
+            "node": "Collect domains",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect domains": {
+      "main": [
+        [
+          {
+            "node": "Decision Maker Finder (Apify)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decision Maker Finder (Apify)": {
+      "main": [
+        [
+          {
+            "node": "Keep found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Keep found": {
+      "main": [
+        [
+          {
+            "node": "Append decision makers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

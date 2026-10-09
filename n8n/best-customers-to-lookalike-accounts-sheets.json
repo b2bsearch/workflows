@@ -1,0 +1,397 @@
+{
+  "name": "Expand your best customers into lookalike companies and their decision makers with Apify and Google Sheets",
+  "nodes": [
+    {
+      "parameters": {
+        "width": 480,
+        "height": 760,
+        "content": "## Expand your best customers into lookalike accounts\n\n### Who's it for\nFounders and sales teams who know their ten best customers and want the next hundred: companies in the same industry, country and size band, with the people to contact at each.\n\n### How it works\n1. A Code node holds the seed domains (your best customers).\n2. **Lookalike Company Finder** (`b2bsearch/lookalike-company-finder`) returns similar companies for each seed with an explicit `matchedOn` string (industry, country, size): no black-box score.\n3. The lookalike domains go to **Decision Maker Finder by Domain** for founders, C-level and VPs.\n4. One row per person lands in your Google Sheet with the company it was found at and the seed it came from.\n\n### Setup steps\n- Add your Apify credential to both Apify nodes.\n- Edit the seed domains in **Seed customers**.\n- Pick the output sheet in **Append accounts and people**.\n- Optional: `maxPerSeed`, `sameCountry`, `sameSize`, `countries` in the first Apify node; `roles` and `maxPerCompany` in the second.\n\n### Requirements\n- Apify account. Lookalikes cost $0.0015 per company ($1.50 per 1,000); decision makers $0.0032 per person. Ten seeds at 25 lookalikes and 3 people each: about $0.38 + $1.20.\n- Google Sheets credential.\n\n### Disclosure\nThe Apify Actor in this template is built by the author of the template. It is pay per result: a miss is a free row."
+      },
+      "name": "Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -900,
+        -220
+      ]
+    },
+    {
+      "parameters": {
+        "width": 420,
+        "height": 300,
+        "content": "## 1. Seeds\nTen distinct customer domains work best; two similar seeds can return the same company twice.",
+        "color": 7
+      },
+      "name": "Note: seeds",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -380,
+        -220
+      ]
+    },
+    {
+      "parameters": {
+        "width": 420,
+        "height": 300,
+        "content": "## 2. Lookalikes\nEvery row says what it matched on. Seeds that resolve to nothing are free rows.",
+        "color": 7
+      },
+      "name": "Note: lookalikes",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        80,
+        -220
+      ]
+    },
+    {
+      "parameters": {
+        "width": 420,
+        "height": 300,
+        "content": "## 3. People at each lookalike\nThe Filter drops the free seed notes, the Aggregate collects the domains, the second Actor runs once for all of them.",
+        "color": 7
+      },
+      "name": "Note: people",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        540,
+        -220
+      ]
+    },
+    {
+      "parameters": {},
+      "name": "When clicking 'Execute workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -340,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Your best customers, as website domains (up to 50).\nconst seedDomains = ['linear.app', 'n26.com'];\nreturn [{ json: { seedDomains } }];"
+      },
+      "name": "Seed customers",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -120,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "actorId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "OTBPcghLrXdZ1FQkx",
+          "cachedResultUrl": "https://console.apify.com/actors/OTBPcghLrXdZ1FQkx/input",
+          "cachedResultName": "Lookalike Company Finder ✅ New · Similar Companies $1.50/1k (b2bsearch/lookalike-company-finder)"
+        },
+        "timeout": {},
+        "operation": "Run actor and get dataset",
+        "customBody": "={{ JSON.stringify({ seedDomains: $json.seedDomains, maxPerSeed: 25, sameCountry: true, sameSize: true }) }}",
+        "actorSource": "store"
+      },
+      "name": "Lookalike Company Finder (Apify)",
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [
+        120,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "status-found",
+              "leftValue": "={{ $json._status }}",
+              "rightValue": "found",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "Keep lookalikes",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        360,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "domain",
+              "renameField": true,
+              "outputFieldName": "domains"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Collect lookalike domains",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        600,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "actorId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "Wiwa5fOD7HOfKdilA",
+          "cachedResultUrl": "https://console.apify.com/actors/Wiwa5fOD7HOfKdilA/input",
+          "cachedResultName": "Decision Maker Finder by Domain ✅ New · CEOs, Founders & VPs (b2bsearch/domain-to-decision-makers)"
+        },
+        "timeout": {},
+        "operation": "Run actor and get dataset",
+        "customBody": "={{ JSON.stringify({ domains: $json.domains, roles: ['founder', 'cxo', 'vp'], maxPerCompany: 3 }) }}",
+        "actorSource": "store"
+      },
+      "name": "Decision Maker Finder (Apify)",
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [
+        840,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "status-found",
+              "leftValue": "={{ $json._status }}",
+              "rightValue": "found",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "Keep people",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        1080,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "companyName": "={{ $json.companyName }}",
+            "companyDomain": "={{ $json.companyDomain }}",
+            "fullName": "={{ $json.fullName }}",
+            "jobTitle": "={{ $json.jobTitle }}",
+            "seniority": "={{ $json.seniority }}",
+            "linkedinUrl": "={{ $json.linkedinUrl }}",
+            "hasWorkEmail": "={{ $json.hasWorkEmail }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "companyName",
+              "displayName": "companyName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "companyDomain",
+              "displayName": "companyDomain",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fullName",
+              "displayName": "fullName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "jobTitle",
+              "displayName": "jobTitle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "seniority",
+              "displayName": "seniority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "linkedinUrl",
+              "displayName": "linkedinUrl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "hasWorkEmail",
+              "displayName": "hasWorkEmail",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Append accounts and people",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1320,
+        140
+      ]
+    }
+  ],
+  "connections": {
+    "When clicking 'Execute workflow'": {
+      "main": [
+        [
+          {
+            "node": "Seed customers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Seed customers": {
+      "main": [
+        [
+          {
+            "node": "Lookalike Company Finder (Apify)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookalike Company Finder (Apify)": {
+      "main": [
+        [
+          {
+            "node": "Keep lookalikes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Keep lookalikes": {
+      "main": [
+        [
+          {
+            "node": "Collect lookalike domains",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect lookalike domains": {
+      "main": [
+        [
+          {
+            "node": "Decision Maker Finder (Apify)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decision Maker Finder (Apify)": {
+      "main": [
+        [
+          {
+            "node": "Keep people",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Keep people": {
+      "main": [
+        [
+          {
+            "node": "Append accounts and people",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

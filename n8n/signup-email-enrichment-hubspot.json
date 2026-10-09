@@ -1,0 +1,191 @@
+{
+  "name": "Enrich new sign-ups by email (name, job title, company, LinkedIn) and create the HubSpot contact with Apify",
+  "nodes": [
+    {
+      "parameters": {
+        "width": 480,
+        "height": 760,
+        "content": "## Enrich new sign-ups by email and create the HubSpot contact\n\n### Who's it for\nProduct-led SaaS teams who get sign-ups with only an email address and want to know who the person is, where they work and what they do before routing the lead.\n\n### How it works\n1. A Webhook receives the sign-up (POST with an `email` field) from your app, a form tool or a Zap.\n2. **Reverse Email Lookup** (`b2bsearch/reverse-email-lookup`) turns the address into the person: name, job title, employer, location, LinkedIn URL. Works for personal addresses too (gmail, outlook).\n3. If a person was found, HubSpot gets a contact with the enriched fields; if not, nothing is created and nothing is charged.\n\n### Setup steps\n- Add your Apify credential to the Apify node.\n- Add your HubSpot credential to **Create HubSpot contact** and map the properties you use.\n- Point your sign-up form at the Webhook URL (production URL after activation).\n\n### Requirements\n- Apify account. $3.20 per 1,000 addresses resolved to a person; unknown addresses are free rows. Expect roughly 1 in 5 personal addresses and most work addresses to resolve.\n- HubSpot credential.\n\n### Disclosure\nThe Apify Actor in this template is built by the author of the template. It is pay per result: a miss is a free row."
+      },
+      "name": "Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -900,
+        -220
+      ]
+    },
+    {
+      "parameters": {
+        "width": 420,
+        "height": 300,
+        "content": "## 1. Sign-up arrives\nPOST `{ \"email\": \"jane@example.com\" }`. Add a name field if you have one: a name beside the address raises the hit rate.",
+        "color": 7
+      },
+      "name": "Note: webhook",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -380,
+        -220
+      ]
+    },
+    {
+      "parameters": {
+        "width": 420,
+        "height": 300,
+        "content": "## 2. Who is this?\n`compact: true` returns a short row: identity, current role, location, the latest positions. Same price as the full record.",
+        "color": 7
+      },
+      "name": "Note: apify",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        80,
+        -220
+      ]
+    },
+    {
+      "parameters": {
+        "width": 420,
+        "height": 300,
+        "content": "## 3. Create the contact\nOnly rows with `_status: found` reach HubSpot. Map `jobTitle`, `companyName`, `profileUrl` to your properties.",
+        "color": 7
+      },
+      "name": "Note: hubspot",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        540,
+        -220
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "signup-enrich",
+        "options": {}
+      },
+      "name": "Sign-up webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -340,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "actorId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "ZDyCwWPNNDsFwnwnM",
+          "cachedResultUrl": "https://console.apify.com/actors/ZDyCwWPNNDsFwnwnM/input",
+          "cachedResultName": "Reverse Email Lookup ✅ New · Email to LinkedIn, Name & Company (b2bsearch/reverse-email-lookup)"
+        },
+        "timeout": {},
+        "operation": "Run actor and get dataset",
+        "customBody": "={{ JSON.stringify({ emails: [$json.body.email], compact: true }) }}",
+        "actorSource": "store"
+      },
+      "name": "Reverse Email Lookup (Apify)",
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [
+        -100,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "status-found",
+              "leftValue": "={{ $json._status }}",
+              "rightValue": "found",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "Person found?",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        140,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "contact",
+        "operation": "upsert",
+        "email": "={{ $json._input.email }}",
+        "additionalFields": {
+          "firstName": "={{ $json.firstName }}",
+          "lastName": "={{ $json.lastName }}",
+          "jobTitle": "={{ $json.jobTitle }}",
+          "companyName": "={{ $json.companyName }}",
+          "websiteUrl": "={{ $json.profileUrl }}"
+        }
+      },
+      "name": "Create HubSpot contact",
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.1,
+      "position": [
+        380,
+        140
+      ]
+    }
+  ],
+  "connections": {
+    "Sign-up webhook": {
+      "main": [
+        [
+          {
+            "node": "Reverse Email Lookup (Apify)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reverse Email Lookup (Apify)": {
+      "main": [
+        [
+          {
+            "node": "Person found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Person found?": {
+      "main": [
+        [
+          {
+            "node": "Create HubSpot contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

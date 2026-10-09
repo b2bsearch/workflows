@@ -1,0 +1,332 @@
+{
+  "name": "Find work emails for LinkedIn profile URLs in Google Sheets with Apify (no cookies, pay per email)",
+  "nodes": [
+    {
+      "parameters": {
+        "width": 480,
+        "height": 760,
+        "content": "## Find work emails for LinkedIn profile URLs in Google Sheets\n\n### Who's it for\nSales, recruiting and growth teams with a sheet of LinkedIn profile URLs (event attendees, Sales Navigator exports, a CRM list) who need an email address for each person without a LinkedIn login or a browser extension.\n\n### How it works\n1. Reads the `linkedinUrl` column of your Google Sheet.\n2. Collects the URLs into one list and runs **LinkedIn Email Finder** (`b2bsearch/linkedin-email-finder`) on Apify once for the whole list. The Actor reads addresses on record from a database of 800M+ professional profiles; it does not scrape LinkedIn pages.\n3. Keeps the rows where an address was found and appends them to a results sheet: email, email type (work or personal), name, title, company, profile URL.\n\n### Setup steps\n- Add your Apify credential to the Apify node (API token from Apify Console → Settings → Integrations).\n- Pick the input sheet (column `linkedinUrl`) in **Read profile URLs** and the output sheet in **Append emails**.\n- Optional: set `includePersonalEmails: true` in the Apify node body to also receive personal addresses.\n\n### Requirements\n- Apify account (free plan works). $8 per 1,000 profiles with an address found; profiles without an address are free rows. A list of 1,000 URLs finishes in a few minutes.\n- Google Sheets credential.\n\n### Disclosure\nThe Apify Actor in this template is built by the author of the template. It is pay per result: a miss is a free row."
+      },
+      "name": "Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -900,
+        -220
+      ]
+    },
+    {
+      "parameters": {
+        "width": 420,
+        "height": 300,
+        "content": "## 1. Read the list\nOne row per LinkedIn profile URL. Bare handles (`satyanadella`) work too. Up to 10,000 per run.",
+        "color": 7
+      },
+      "name": "Note: read",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -380,
+        -220
+      ]
+    },
+    {
+      "parameters": {
+        "width": 420,
+        "height": 300,
+        "content": "## 2. One Actor run for the whole list\nThe Aggregate node turns the rows into one `profileUrls` array so the Actor runs once. Every output row carries `_status`: `found` is the paid result, `no_email` and `not_found` are free.",
+        "color": 7
+      },
+      "name": "Note: apify",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        80,
+        -220
+      ]
+    },
+    {
+      "parameters": {
+        "width": 420,
+        "height": 300,
+        "content": "## 3. Save what was found\n`email` is the best address, `emailType` says work or personal, `workEmails` lists every work address on record.",
+        "color": 7
+      },
+      "name": "Note: write",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        540,
+        -220
+      ]
+    },
+    {
+      "parameters": {},
+      "name": "When clicking 'Execute workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -340,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "options": {}
+      },
+      "name": "Read profile URLs",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -120,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "linkedinUrl",
+              "renameField": true,
+              "outputFieldName": "profileUrls"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Collect URLs",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        120,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "actorId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "aaQmB1hxDtRxhCUtX",
+          "cachedResultUrl": "https://console.apify.com/actors/aaQmB1hxDtRxhCUtX/input",
+          "cachedResultName": "LinkedIn Email Finder ✅ New · Profile URL to Email, Bulk (b2bsearch/linkedin-email-finder)"
+        },
+        "timeout": {},
+        "operation": "Run actor and get dataset",
+        "customBody": "={{ JSON.stringify({ profileUrls: $json.profileUrls }) }}",
+        "actorSource": "store"
+      },
+      "name": "LinkedIn Email Finder (Apify)",
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [
+        360,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "status-found",
+              "leftValue": "={{ $json._status }}",
+              "rightValue": "found",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "Keep found",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        600,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "email": "={{ $json.email }}",
+            "emailType": "={{ $json.emailType }}",
+            "fullName": "={{ $json.fullName }}",
+            "jobTitle": "={{ $json.jobTitle }}",
+            "companyName": "={{ $json.companyName }}",
+            "linkedinUrl": "={{ $json.linkedinUrl }}",
+            "_status": "={{ $json._status }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "emailType",
+              "displayName": "emailType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fullName",
+              "displayName": "fullName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "jobTitle",
+              "displayName": "jobTitle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "companyName",
+              "displayName": "companyName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "linkedinUrl",
+              "displayName": "linkedinUrl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "_status",
+              "displayName": "_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Append emails",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        840,
+        140
+      ]
+    }
+  ],
+  "connections": {
+    "When clicking 'Execute workflow'": {
+      "main": [
+        [
+          {
+            "node": "Read profile URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read profile URLs": {
+      "main": [
+        [
+          {
+            "node": "Collect URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect URLs": {
+      "main": [
+        [
+          {
+            "node": "LinkedIn Email Finder (Apify)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkedIn Email Finder (Apify)": {
+      "main": [
+        [
+          {
+            "node": "Keep found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Keep found": {
+      "main": [
+        [
+          {
+            "node": "Append emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
